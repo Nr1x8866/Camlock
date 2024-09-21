@@ -1,0 +1,60 @@
+-- LocalScript inside StarterPlayerScripts
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Get the local player and camera
+local player = Players.LocalPlayer
+local camera = game.Workspace.CurrentCamera
+local rotationSpeed = 100 -- Speed of the camera rotation
+
+local isRotating = false
+local rotationAngle = 0
+
+-- Function to lock and rotate the camera around the head
+local function startCameraRotation()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local head = character:WaitForChild("Head") -- Wait for the head to exist
+
+    -- Switch to Scriptable camera mode
+    camera.CameraType = Enum.CameraType.Scriptable
+
+    -- Start rotating the camera
+    RunService.RenderStepped:Connect(function(deltaTime)
+        if isRotating and head then
+            -- Calculate the new rotation angle
+            rotationAngle = rotationAngle + (rotationSpeed * deltaTime)
+            
+            -- Set the camera position and rotation
+            local cameraOffset = CFrame.new(0, 2, 5) -- Offset from the head (height and distance)
+            local cameraRotation = CFrame.Angles(0, math.rad(rotationAngle), 0) -- Rotate around the Y axis
+
+            -- Update the camera CFrame to orbit around the head
+            camera.CFrame = head.CFrame * cameraRotation * cameraOffset
+            camera.Focus = head.CFrame
+        end
+    end)
+end
+
+-- Function to stop rotating the camera
+local function stopCameraRotation()
+    camera.CameraType = Enum.CameraType.Custom -- Reset camera to default
+    isRotating = false
+end
+
+-- Listen for key presses
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode == Enum.KeyCode.F then
+        isRotating = true
+        startCameraRotation()
+    end
+end)
+
+-- Listen for key releases
+UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode == Enum.KeyCode.F then
+        stopCameraRotation()
+    end
+end)
